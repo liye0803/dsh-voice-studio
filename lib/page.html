@@ -208,10 +208,19 @@ async function openPath(target){
   const r=await p('open',{path:target});
   if(!r.ok) alert(r.message||'打不开');
 }
-async function pickDir(){
+async function pickDir(target){
   const r=await p('pick-dir',{});
-  if(r.ok && r.path){ document.getElementById('set-outDir').value=r.path; }
+  if(r.ok && r.path){ document.getElementById(target||'set-outDir').value=r.path; }
   else if(r.message) alert('没选到目录：'+r.message);
+}
+async function wizSavePaths(){
+  const installRoot=(document.getElementById('wiz-install')?.value||'').trim();
+  const rvcRoot=(document.getElementById('wiz-rvc')?.value||'').trim();
+  const msg=document.getElementById('wizpmsg');
+  if(msg) msg.textContent='保存中…';
+  const r=await p('settings',{installRoot,rvcRoot});
+  if(r.ok){ if(msg) msg.textContent='已保存，重新检测…'; await load(); wizRender(); }
+  else if(msg) msg.textContent='保存失败';
 }
 async function loadRvcCheck(){
   const r=await g('rvc-check');
@@ -279,6 +288,17 @@ async function wizRender(){
   if(wizStep===1){
     document.getElementById('wiz-title').textContent='第一步 · 环境体检';
     body.innerHTML='<div class="muted">检查运行这台机器需要的项目…</div><div id="wiz-env"></div>';
+    const st=await g('state'); const s0=st.settings||{};
+    if(!(s0.installRoot||'').trim() || !(s0.rvcRoot||'').trim()){
+      body.insertAdjacentHTML('afterbegin', '<div style="margin:0 0 12px;padding:12px;border:1px solid var(--vs-line);border-radius:10px">'+
+        '<b>先确认装在哪</b><div class="muted">填一次就行，之后都在设置里改</div>'+
+        '<label>GPT-SoVITS 安装目录（含 venv 与 gpt-sovits）</label>'+
+        '<div style="display:flex;gap:8px"><input id="wiz-install" value="'+(s0.installRoot||'')+'" placeholder="例如 D:\\AI_Tools\\dania-voice"><button onclick="pickDir(&quot;wiz-install&quot;)">浏览…</button></div>'+
+        '<label>RVC 根目录（可选，翻唱用）</label>'+
+        '<div style="display:flex;gap:8px"><input id="wiz-rvc" value="'+(s0.rvcRoot||'')+'" placeholder="例如 E:\\Aurabot\\rvc"><button onclick="pickDir(&quot;wiz-rvc&quot;)">浏览…</button></div>'+
+        '<div style="margin-top:8px"><button onclick="wizSavePaths()">保存并重新检测</button><span class="muted" id="wizpmsg"></span></div>'+
+        '</div>');
+    }
     const e=await g('env'); const box=document.getElementById('wiz-env');
     (e.items||[]).forEach(i=>{
       const d=document.createElement('div'); d.className='env';
