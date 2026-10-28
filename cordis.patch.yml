@@ -1,0 +1,6 @@
+# dsh-voice-studio —— DSH bundle patch
+# 把插件插进 profile 的配置树；音色、路径都写在插件自己的设置页里，
+# 落盘到 $DSH_HOME/voice-studio/settings.json。
+- insert:
+    - id: voice-studio
+      name: dsh-voice-studio

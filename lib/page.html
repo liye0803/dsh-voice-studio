@@ -1,0 +1,662 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8">
+<title>音色工坊</title><style>
+:root{
+  color-scheme:dark;
+  --vs-bg:#0f1218; --vs-card:#171c26; --vs-card2:#1b2130; --vs-line:#242c3a;
+  --vs-text:#dbe3ef; --vs-muted:#8895a7; --vs-btn:#22314a; --vs-btn-line:#2e4463;
+  --vs-input:#0f131a; --vs-pre:#0b0e13; --vs-ok:#4ade80; --vs-bad:#f87171; --vs-warn:#fbbf24;
+}
+body{margin:0;font:14px/1.6 "Segoe UI","Microsoft YaHei",sans-serif;background:var(--vs-bg);color:var(--vs-text)}
+.wrap{max-width:1080px;margin:0 auto;padding:22px}
+.h{display:flex;justify-content:space-between;align-items:center}
+h1{font-size:18px;margin:0}
+.muted{color:var(--vs-muted);font-size:12px}
+.tabs{display:inline-flex;gap:4px;margin:14px 0;padding:4px;background:var(--vs-card);border:1px solid var(--vs-line);border-radius:999px}
+.tab{padding:6px 20px;border-radius:999px;border:0;background:transparent;cursor:pointer;font-size:13px;color:var(--vs-muted)}
+.tab.on{background:var(--vs-btn);color:var(--vs-text);box-shadow:inset 0 0 0 1px var(--vs-btn-line)}
+.grid{display:grid;grid-template-columns:360px 1fr;gap:16px}
+.card{background:var(--vs-card);border:1px solid var(--vs-line);border-radius:12px;padding:14px}
+.voice{display:flex;justify-content:space-between;gap:6px;align-items:center;padding:8px;border-radius:8px;border:1px solid transparent;color:var(--vs-text)}
+.voice:hover{background:var(--vs-card2);border-color:var(--vs-line)}
+.voice.on{background:var(--vs-card2);border-color:var(--vs-btn-line)}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+button{background:var(--vs-btn);color:var(--vs-text);border:1px solid var(--vs-btn-line);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px}
+button:hover{filter:brightness(1.15)}
+button:disabled{opacity:.5;cursor:default}
+button.mini{padding:2px 7px;font-size:12px}
+input,select,textarea{width:100%;box-sizing:border-box;background:var(--vs-input);border:1px solid var(--vs-line);color:var(--vs-text);border-radius:8px;padding:7px 9px;font:inherit}
+label{display:block;margin:10px 0 4px;color:var(--vs-muted);font-size:12px}
+pre{background:var(--vs-pre);border:1px solid var(--vs-line);border-radius:10px;padding:12px;max-height:280px;overflow:auto;font:12px/1.5 Consolas,monospace;color:var(--vs-muted);white-space:pre-wrap}
+.bar{height:6px;background:var(--vs-card2);border-radius:3px;overflow:hidden;margin-top:6px}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#2f6fd0,#4aa3ff);width:0;transition:width .4s}
+.env{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-bottom:1px solid var(--vs-line)}
+.ok{color:var(--vs-ok)}.bad{color:var(--vs-bad)}.warn{color:var(--vs-warn)}
+.banner{background:rgba(255,170,0,.12);border:1px solid rgba(255,170,0,.35);color:var(--vs-warn);border-radius:10px;padding:10px 12px;margin:10px 0;font-size:13px}
+.job{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--vs-line);font-size:12px}
+</style></head><body><div class="wrap">
+<div class="h"><div><h1>音色工坊</h1><div class="muted" id="health">正在检查…</div></div>
+<div><span class="muted" id="reft"></span> <span class="muted" id="build"></span> <button onclick="refreshAll()">刷新</button></div></div>
+<div id="wizard" style="display:none">
+ <div class="card">
+  <div class="h"><b id="wiz-title">第一步 · 环境体检</b><span class="muted" id="wiz-step">1 / 3</span></div>
+  <div id="wiz-body" style="margin-top:10px"></div>
+  <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
+   <button onclick="wizSkip()">跳过</button>
+   <button id="wiz-prev" onclick="wizGo(-1)">上一步</button>
+   <button id="wiz-next" onclick="wizGo(1)">下一步</button>
+  </div>
+ </div>
+</div>
+<div class="tabs">
+  <div class="tab on" data-v="say" onclick="show('say')">说话</div>
+  <div class="tab" data-v="cover" onclick="show('cover')">翻唱</div>
+  <div class="tab" data-v="settings" onclick="show('settings')">设置</div>
+</div>
+<div id="banner"></div>
+<div id="view-work">
+<div id="wsec-say">
+<div class="card" style="margin-bottom:14px">
+ <div class="h"><div><b id="planlabel">智能推荐</b><div class="muted" id="plandetail">正在分析你的机器…</div></div>
+ <div><button onclick="applyPlan()" id="planbtn">按推荐配置</button></div></div>
+</div>
+<div class="grid">
+ <div class="card">
+  <div class="h"><b>音色</b><span class="muted" id="cnt"></span></div>
+  <div id="list" style="margin-top:8px"></div>
+  <div style="margin-top:10px"><input id="saytext" value="你好呀，我是大肥鱼"><button style="margin-top:8px" onclick="say(event)">试听当前音色</button><span class="muted" id="smsg"></span></div>
+  <div style="display:flex;gap:14px;margin-top:8px">
+   <label style="margin:0;flex:1">语速 <span id="spd">1.00</span><input id="speed" type="range" min="0.6" max="1.6" step="0.05" value="1"></label>
+   <label style="margin:0;flex:1">温度 <span id="tmp">0.60</span><input id="temperature" type="range" min="0.1" max="1.2" step="0.05" value="0.6"></label>
+  </div>
+  <button style="margin-top:8px" onclick="sayAB(event)">A/B 对比（当前 vs 零样本）</button>
+  <div style="margin-top:12px"><b>批量合成</b><div class="muted">一行一句，最多 30 句，逐条下载</div><textarea id="batchtext" rows="4" style="width:100%;margin-top:4px" placeholder="第一句&#10;第二句"></textarea><button style="margin-top:6px" onclick="batch()">生成并下载</button><span class="muted" id="bmsg"></span></div>
+  <div style="margin-top:14px"><b>最近任务</b><div id="jobs" style="margin-top:6px"></div></div>
+ </div>
+ <div class="card">
+  <b>新建训练</b>
+  <label>名字</label><input id="name" placeholder="例如 yinlang2">
+  <label>音频（可填路径，或选文件上传）</label>
+  <div style="display:flex;gap:8px"><input id="audio" placeholder="D:\\视频\\xxx.wav"><input type="file" id="file" accept=".wav,.mp3" style="width:130px"></div>
+  <label>训练日志目录（留空 = 设置里的默认）</label><input id="logdir">
+  <label>模型版本</label><select id="ver"><option value="v2ProPlus">v2ProPlus（默认，8G+）</option><option value="v2">v2 小模型（6G 可试）</option></select>
+  <div style="margin-top:12px"><button onclick="train()">开始训练</button><span class="muted" id="tmsg"></span></div>
+  <div class="muted" style="margin-top:6px">训练期间语音服务暂停，大肥鱼会改发文字；结束后自动恢复。</div>
+  <div id="prog" style="display:none;margin-top:12px">
+    <div class="muted" id="pstate">准备中</div><div class="bar"><i id="pbar"></i></div><div class="muted" id="pstep"></div>
+  </div>
+  <label>日志</label><pre id="log">（训练开始后在这里滚动）</pre>
+ </div>
+</div>
+</div>
+<div id="wsec-cover" style="display:none">
+  <div class="card"><b>翻唱 / 变声</b><div class="muted">整首歌 = 分离人声 → 变声 → 混音出 mp3；人声片段 = 直接变声（会先暂停语音服务，期间大肥鱼改发文字）</div>
+   <div style="display:flex;gap:8px;margin-top:6px"><input id="rvcaudio" placeholder="音频路径"><input type="file" id="rvcfile" accept=".wav,.mp3" style="width:130px"></div>
+   <label>RVC 音色 <button class="mini" onclick="document.getElementById('rvcmodelfile').click()" style="margin-left:6px">导入 .pth/.zip</button>
+   <input type="file" id="rvcmodelfile" accept=".pth,.index,.zip" style="display:none">
+  </label><select id="rvcvoice"></select>
+   <label>变调 <span id="rvcpitchval">0</span> 半音</label><input id="rvcpitch" type="range" min="-12" max="12" step="1" value="0">
+   <label>模式</label><select id="rvcmode" style="width:100%"><option value="cover">完整翻唱（分离 + 变声 + 混音 → mp3）</option><option value="convert">只变声（输入就是人声）</option></select>
+   <div style="display:flex;gap:14px;margin-top:10px">
+    <label style="margin:0;flex:1">人声音量 <span id="rvcmixvval">1.0</span><input id="rvcmixv" type="range" min="0.2" max="1.5" step="0.1" value="1"></label>
+    <label style="margin:0;flex:1">伴奏音量 <span id="rvcmixival">0.8</span><input id="rvcmixi" type="range" min="0.1" max="1.5" step="0.1" value="0.8"></label>
+   </div>
+   <label>只处理前 N 秒（0 = 整首）</label><input id="rvcclip" type="number" min="0" max="600" value="0">
+   <div style="margin-top:8px"><button onclick="rvcStart()">开始</button> <button onclick="rvcCancel()">取消</button><span class="muted" id="rvcmsg"></span></div>
+   <div id="rvcprog" style="display:none;margin-top:8px"><div class="bar"><i id="rvcbar"></i></div><pre id="rvclog"></pre><audio id="rvcplayer" controls style="display:none;width:100%;margin-top:8px"></audio><div style="margin-top:6px"><a id="rvcdl" class="muted" style="display:none;cursor:pointer">下载结果</a></div></div>
+  </div>
+</div>
+</div>
+<div id="view-settings" style="display:none">
+ <div style="display:flex;align-items:center;gap:8px;margin:0 0 14px">
+  <span class="muted">设置分区</span>
+  <div class="tabs" style="margin:0;padding:3px">
+   <div class="tab on" id="stab-say" style="padding:4px 14px;font-size:12px" onclick="stab('say')">语音引擎</div>
+   <div class="tab" id="stab-cover" style="padding:4px 14px;font-size:12px" onclick="stab('cover')">翻唱引擎</div>
+   <div class="tab" id="stab-sys" style="padding:4px 14px;font-size:12px" onclick="stab('sys')">系统</div>
+  </div>
+ </div>
+
+ <div id="sec-say">
+  <div class="card" style="margin-bottom:14px"><div class="h"><div class="muted" id="saystatus">读取中…</div><div><button onclick="p('tts-start',{}).then(()=>setTimeout(checkEnv,3000))">启动引擎</button> <button onclick="p('tts-stop',{}).then(checkEnv)">停止</button></div></div></div>
+  <div class="card">
+   <b>引擎</b>
+   <label>语音引擎地址</label><input id="set-ttsUrl" placeholder="http://127.0.0.1:9880">
+   <div style="display:flex;gap:18px;margin-top:12px">
+    <label style="display:flex;gap:8px;align-items:center;margin:0"><input type="checkbox" id="set-autoStartEngine" style="width:auto"> 自动启动</label>
+    <label style="display:flex;gap:8px;align-items:center;margin:0"><input type="checkbox" id="set-autoPauseTts" style="width:auto"> 训练/翻唱前暂停</label>
+   </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+   <b>参考音</b>
+   <label>参考音路径</label>
+   <div style="display:flex;gap:8px"><input id="set-refAudio" placeholder="D:\…\ref\xxx.wav"><button onclick="openPath(document.getElementById('set-refAudio').value)">打开</button></div>
+   <label>参考音文字（必须与音频逐字一致）</label><input id="set-refText">
+  </div>
+  <div class="card" style="margin-top:14px">
+   <b>训练</b>
+   <label>日志根目录（留空 = ~/.dsh/voice-studio/logs）</label>
+   <div style="display:flex;gap:8px"><input id="set-logRoot" placeholder="留空用默认"><button onclick="openPath(document.getElementById('set-logRoot').value||'')">打开</button></div>
+   <label>权重命名模板（{name} 名字，{epoch} 轮次）</label><input id="set-nameTemplate" placeholder="{name}-e{epoch}">
+  </div>
+  <div class="card" style="margin-top:14px">
+   <b>环境自检</b><div class="muted">语音相关 10 项，红项会写修复方法</div>
+   <div id="envlist" style="margin-top:8px"></div>
+   <div style="margin-top:10px"><button onclick="checkEnv()">重新检测</button></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+   <b>参考音库</b><div class="muted">ref 目录 + 上传目录；可转写、设为全局参考音、绑到当前音色</div>
+   <div id="reflist" style="margin-top:8px"></div>
+  </div>
+  <div style="margin-top:14px"><button onclick="saveSettings()">保存设置</button><span class="muted" id="setmsg"></span></div>
+ </div>
+
+ <div id="sec-cover" style="display:none">
+  <div class="card" style="margin-bottom:14px"><div class="h"><div class="muted" id="rvcstatus">读取中…</div><button onclick="loadRvcCheck()">重新检测</button></div></div>
+  <div class="card">
+   <b>路径</b>
+   <label>RVC 根目录（Python 环境 + Applio + 模型）</label>
+   <div style="display:flex;gap:8px"><input id="set-rvcRoot" placeholder="E:\Aurabot\rvc"><button onclick="openPath(document.getElementById('set-rvcRoot').value)">打开</button></div>
+   <div id="rvcparts" style="margin-top:10px"></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+   <b>音色模型</b><div class="muted">.pth 与同名 .index 会自动配对</div>
+   <div style="margin-top:8px"><button onclick="document.getElementById('rvcmodelfile2').click()">导入 .pth / .index / .zip</button>
+    <input type="file" id="rvcmodelfile2" accept=".pth,.index,.zip" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"></div>
+   <div id="rvcmodelist" style="margin-top:10px"></div>
+  </div>
+  <div style="margin-top:14px"><button onclick="saveSettings()">保存设置</button><span class="muted" id="setmsg2"></span></div>
+ </div>
+
+ <div id="sec-sys" style="display:none">
+  <div class="card">
+   <b>一键导入</b><div class="muted">拖进来或点选：配置 json / RVC 模型 pth·index·zip / GPT-SoVITS 权重 zip / 参考音 wav·mp3</div>
+   <div id="dropzone" style="margin-top:10px;border:1px dashed var(--vs-line);border-radius:10px;padding:24px;text-align:center;cursor:pointer">把文件拖到这里，或点击选择</div>
+   <div style="margin-top:8px"><button onclick="document.getElementById('importfile').click()">选择文件…</button></div>
+   <input type="file" id="importfile" accept=".json,.pth,.index,.zip,.wav,.mp3,.m4a,.flac" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
+   <div class="muted" id="impmsg" style="margin-top:8px"></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+   <b>安装位置</b>
+   <label>安装根目录（GPT-SoVITS + 两个 venv 所在）</label>
+   <div style="display:flex;gap:8px"><input id="set-installRoot" placeholder="D:\AI_Tools\dania-voice"><button onclick="openPath(document.getElementById('set-installRoot').value)">打开</button></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+   <b>输出位置</b><div class="muted">翻唱结果、变声文件都存这里（留空 = ~/.dsh/voice-studio/samples）</div>
+   <div style="display:flex;gap:8px;margin-top:8px"><input id="set-outDir" placeholder="留空用默认"><button onclick="pickDir()">选择…</button><button onclick="openPath(document.getElementById('set-outDir').value)">打开</button></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+   <b>维护</b>
+   <div style="margin-top:8px"><button onclick="exportCfg()">导出配置</button> <button onclick="diag()">生成诊断包</button> <button onclick="clean()">清理缓存</button> <button onclick="syncAb()">同步到 Aurabot</button> <button onclick="wizReset()">重新运行向导</button></div>
+  </div>
+  <div style="margin-top:14px"><button onclick="saveSettings()">保存设置</button><span class="muted" id="setmsg3"></span></div>
+ </div>
+</div>
+<script>
+const API='/voice-studio/api';
+const g=(a)=>fetch(API+'?action='+a,{cache:'no-store'}).then(r=>r.json());
+const p=(a,b)=>fetch(API+'?action='+a,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(b||{})}).then(r=>r.json());
+let jobId=null, active='zero-shot';
+function stab(v){
+  ['say','cover','sys'].forEach(k=>{
+    const sec=document.getElementById('sec-'+k); if(sec) sec.style.display = k===v?'':'none';
+    const tab=document.getElementById('stab-'+k); if(tab) tab.classList.toggle('on', k===v);
+  });
+  if(v==='cover') loadRvcCheck();
+}
+async function openPath(target){
+  if(!target){ alert('路径为空'); return }
+  const r=await p('open',{path:target});
+  if(!r.ok) alert(r.message||'打不开');
+}
+async function pickDir(){
+  const r=await p('pick-dir',{});
+  if(r.ok && r.path){ document.getElementById('set-outDir').value=r.path; }
+  else if(r.message) alert('没选到目录：'+r.message);
+}
+async function loadRvcCheck(){
+  const r=await g('rvc-check');
+  const bar=document.getElementById('rvcstatus');
+  if(!r.ok){ if(bar) bar.textContent='读取失败：'+(r.message||''); return }
+  const bad=(r.parts||[]).filter(x=>!x.ok);
+  if(bar) bar.textContent=(bad.length? '⚠ ':'● ')+(bad.length? bad.length+' 项缺失：'+bad.map(x=>x.label).join('、') : 'RVC 就绪')+' · 模型 '+(r.models||[]).length+' 个 · 分离模型 '+r.separatorModels;
+  const box=document.getElementById('rvcparts'); if(box){ box.innerHTML=''; (r.parts||[]).forEach(x=>{ const d=document.createElement('div'); d.className='env'; d.innerHTML='<span class="'+(x.ok?'ok':'bad')+'">'+(x.ok?'✓':'×')+'</span><div style="flex:1"><b>'+x.label+'</b><div class="muted">'+x.detail+'</div></div>'; box.appendChild(d) }) }
+  const ml=document.getElementById('rvcmodelist');
+  if(ml){ ml.innerHTML=''; if(!(r.models||[]).length){ ml.innerHTML='<span class="muted">还没有音色模型，点上面的导入</span>' } else { (r.models||[]).forEach(v=>{ const d=document.createElement('div'); d.className='env'; d.innerHTML='<span class="ok">✓</span><div style="flex:1"><b>'+v.id+'</b><div class="muted">'+v.pth+(v.index?'  +  index':'')+'</div></div>'; ml.appendChild(d) }) } }
+}
+function stabInit(){
+  const zone=document.getElementById('dropzone');
+  const input=document.getElementById('importfile');
+  if(zone&&input){
+    zone.onclick=()=>input.click();
+    input.onchange=async(e)=>{ const f=e.target.files[0]; if(f) await doImport(f); };
+    zone.ondragover=(e)=>{e.preventDefault(); zone.style.borderColor='var(--vs-btn-line)'};
+    zone.ondragleave=()=>{zone.style.borderColor='var(--vs-line)'};
+    zone.ondrop=async(e)=>{ e.preventDefault(); zone.style.borderColor='var(--vs-line)'; const f=e.dataTransfer.files[0]; if(f) await doImport(f); };
+  }
+  const m2=document.getElementById('rvcmodelfile2');
+  if(m2) m2.onchange=async(e)=>{ const f=e.target.files[0]; if(f) await doImport(f); };
+}
+async function doImport(file){
+  const msg=document.getElementById('impmsg');
+  if(msg) msg.textContent='导入中：'+file.name;
+  const up=await fetch('/voice-studio/upload?name='+encodeURIComponent(file.name),{method:'POST',body:await file.arrayBuffer()}).then(r=>r.json());
+  if(!up.ok){ if(msg) msg.textContent='上传失败：'+up.message; return }
+  const r=await p('import-auto',{path:up.path});
+  if(msg) msg.textContent=r.ok? (r.note||'已导入')+'：'+(r.placed||[]).join('、') : ('导入失败：'+(r.message||''));
+  if(r.ok){ loadRvcVoices(); loadRvcCheck(); load(); }
+}
+stabInit();
+function show(v){
+  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.toggle('on',t.dataset.v===v));
+  const isSet = v==='settings';
+  document.getElementById('view-work').style.display = isSet ? 'none' : '';
+  document.getElementById('view-settings').style.display = isSet ? '' : 'none';
+  document.getElementById('wsec-say').style.display = v==='cover' ? 'none' : '';
+  document.getElementById('wsec-cover').style.display = v==='cover' ? '' : 'none';
+  if (isSet) checkEnv();
+  else if (v==='cover') loadRvcVoices();
+}
+let wizStep=1, wizShown=false;
+function showWizard(){
+  if(wizShown) return; wizShown=true;
+  document.getElementById('wizard').style.display='';
+  document.querySelector('.tabs').style.display='none';
+  document.getElementById('view-work').style.display='none';
+  document.getElementById('view-settings').style.display='none';
+  wizRender();
+}
+function hideWizard(){
+  document.getElementById('wizard').style.display='none';
+  document.querySelector('.tabs').style.display='';
+  document.getElementById('view-work').style.display='';
+  document.getElementById('view-settings').style.display='none';
+}
+async function wizRender(){
+  const body=document.getElementById('wiz-body');
+  document.getElementById('wiz-step').textContent=wizStep+' / 3';
+  document.getElementById('wiz-prev').disabled = wizStep===1;
+  document.getElementById('wiz-next').textContent = wizStep===3?'完成':'下一步';
+  if(wizStep===1){
+    document.getElementById('wiz-title').textContent='第一步 · 环境体检';
+    body.innerHTML='<div class="muted">检查运行这台机器需要的项目…</div><div id="wiz-env"></div>';
+    const e=await g('env'); const box=document.getElementById('wiz-env');
+    (e.items||[]).forEach(i=>{
+      const d=document.createElement('div'); d.className='env';
+      d.innerHTML='<span class="'+(i.ok?'ok':'bad')+'">'+(i.ok?'✓':'✗')+'</span><div><b>'+i.label+'</b><div class="muted">'+i.detail+'</div>'+(i.ok?'':'<div class="muted">修复：'+i.fix+'</div>')+'</div>';
+      box.appendChild(d);
+    });
+    const bad=(e.items||[]).filter(i=>!i.ok);
+    body.insertAdjacentHTML('beforeend','<div class="muted" style="margin-top:8px">'+bad.length+' 项需要注意；不影响先试用零样本。</div>');
+  } else if(wizStep===2){
+    document.getElementById('wiz-title').textContent='第二步 · 选择玩法';
+    const pl=await g('plan');
+    body.innerHTML='<div><b>'+pl.label+'</b></div><div class="muted">'+pl.detail+'</div>'+
+      '<div style="margin-top:10px">'+
+      '<label><input type="radio" name="wmode" value="zero-shot" checked style="width:auto"> 零样本：不训练，用底模 + 参考音马上说话</label>'+
+      '<label><input type="radio" name="wmode" value="train" '+(pl.vramMB>=5120?'':'disabled')+' style="width:auto"> 训练专属音色'+(pl.vramMB>=5120?'（6G 用 v2 / 8G+ 用 v2ProPlus）':'（显存不足）')+'</label>'+
+      '<label><input type="radio" name="wmode" value="use-trained" '+(pl.trained?'':'disabled')+' style="width:auto"> 用已训练音色'+(pl.trained?'':'（还没有）')+'</label></div>';
+  } else {
+    document.getElementById('wiz-title').textContent='第三步 · 完成';
+    body.innerHTML='<div><b>配置就绪</b></div><div class="muted">之后随时可以在「设置」页改路径、开关、导入导出配置。</div>'+
+      '<div class="muted" style="margin-top:8px">提示：训练占满显存，默认会先暂停语音服务，训完自动恢复。</div>';
+  }
+}
+function wizGo(d){
+  if(wizStep===3 && d===1){ wizFinish(); return; }
+  wizStep=Math.min(3,Math.max(1,wizStep+d));
+  wizRender();
+}
+async function wizFinish(){
+  const mode=(document.querySelector('input[name="wmode"]:checked')||{}).value||'zero-shot';
+  await p('setup-done',{});
+  hideWizard();
+  await load();
+  if(mode==='train'){
+    document.getElementById('name').focus();
+    try{ const pl=await g('plan'); if(pl.vramMB<8192){ const el=document.getElementById('ver'); if(el) el.value='v2'; } }catch(e){}
+  } else if(mode==='use-trained'){
+    const st=await g('state'); const v=(st.voices||[]).find(x=>x.id!=='zero-shot'&&x.status==='ready');
+    if(v) await p('active',{id:v.id});
+    await load();
+  } else {
+    await p('tts-ensure',{});
+  }
+}
+async function wizSkip(){ await p('setup-done',{}); hideWizard(); load(); }
+async function wizReset(){ await p('setup-reset',{}); location.reload(); }
+async function refreshAll(){
+  const t=document.getElementById('reft');
+  try{
+    t.textContent='刷新中…';
+    await load();
+    if(document.getElementById('view-settings').style.display!=='none') await checkEnv();
+    t.textContent='已刷新 '+new Date().toLocaleTimeString();
+  }catch(e){
+    t.textContent='刷新失败：'+e.message;
+  }
+}
+async function load(){
+  const s=await g('state');
+  if(!s.ok){document.getElementById('health').textContent='连不上宿主：'+(s.message||'');return}
+  active=s.active;
+  document.getElementById('cnt').textContent=s.voices.length+' 个';
+  const list=document.getElementById('list'); list.innerHTML='';
+  s.voices.forEach(v=>{
+    const d=document.createElement('div'); d.className='voice'+(v.id===s.active?' on':'');
+    const dot=v.status==='ready'?'#4ade80':'#64748b';
+    const note=v.note?'<div class="muted">'+v.note+'</div>':'';
+    d.innerHTML='<div><span class="dot" style="background:'+dot+'"></span>'+v.name+(v.status==='ready'?'':'<span class="muted">（缺权重）</span>')+note+'</div>';
+    const b1=document.createElement('button'); b1.textContent=v.id===s.active?'当前':'设为当前'; b1.className='mini';
+    if(v.id===s.active) b1.disabled=true;
+    b1.onclick=async()=>{const r=await p('active',{id:v.id}); if(r.warning)alert(r.warning); load()};
+    const b2=document.createElement('button'); b2.textContent='⋯'; b2.className='mini';
+    b2.onclick=()=>menuVoice(v);
+    const box=document.createElement('div'); box.style.display='flex'; box.style.gap='4px'; box.appendChild(b1); box.appendChild(b2);
+    d.appendChild(box); list.appendChild(d);
+  });
+  const jl=document.getElementById('jobs'); jl.innerHTML='';
+  (s.jobs||[]).slice(0,6).forEach(j=>{
+    const d=document.createElement('div'); d.className='job';
+    const st=j.status==='done'?'ok':(j.status==='failed'?'bad':'warn');
+    d.innerHTML='<span class="'+st+'">'+j.status+'</span><span>'+j.name+'</span><span class="muted">'+new Date(j.startedAt).toLocaleString()+'</span>';
+    if(j.status==='failed'||j.status==='interrupted'){const b=document.createElement('button'); b.textContent='重试'; b.className='mini'; b.onclick=async()=>{const r=await p('retry',{id:j.id}); if(r.ok) load();}; d.appendChild(b)}
+    jl.appendChild(d);
+  });
+  const e=await g('env');
+  const bad=(e.items||[]).filter(i=>!i.ok);
+  const ttsItem=(e.items||[]).find(i=>i.key==='tts');
+  document.getElementById('health').textContent='引擎 '+(ttsItem&&ttsItem.ok?'在线':'离线')+' · '+s.settings.ttsUrl;
+  document.getElementById('banner').innerHTML = bad.length? '<div class="banner">环境有 '+bad.length+' 项未就绪：'+bad.map(i=>i.label).join('、')+' — 去「设置」页看怎么修</div>':'';
+  const pl=await g('plan'); window.__plan=pl;
+  document.getElementById('planlabel').textContent=pl.label||'智能推荐';
+  document.getElementById('plandetail').textContent=(pl.detail||'')+(pl.engineOnline?'':'（引擎离线，点右边会自动启动）');
+  document.getElementById('planbtn').textContent=pl.mode==='train'?'去训练':(pl.mode==='use-trained'?'切换音色':'确保可用');
+  if(!pl.canTrain){ const vv=document.getElementById('ver'); if(vv&&vv.value==='v2ProPlus') vv.value='v2'; }
+  document.getElementById('set-rvcRoot').value=s.settings.rvcRoot||'';
+  document.getElementById('set-outDir').value=s.settings.outDir||'';
+  document.getElementById('set-installRoot').value=s.settings.installRoot||'';
+  document.getElementById('set-ttsUrl').value=s.settings.ttsUrl||'';
+  document.getElementById('set-refAudio').value=s.settings.refAudio||'';
+  document.getElementById('set-refText').value=s.settings.refText||'';
+  document.getElementById('set-logRoot').value=s.settings.logRoot||'';
+  document.getElementById('set-nameTemplate').value=s.settings.nameTemplate||'{name}-e{epoch}';
+  document.getElementById('set-autoPauseTts').checked=!!s.settings.autoPauseTts;
+  document.getElementById('set-autoStartEngine').checked=!!s.settings.autoStartEngine;
+  if(!s.settings.setupDone) showWizard();
+  loadRefs();
+  loadRvcVoices();
+}
+async function menuVoice(v){
+  const act=prompt('对「'+v.name+'」做什么？输入 1 设备注 / 2 重命名 / 3 删除（删文件可选）','1');
+  if(!act) return;
+  if(act==='1'){ const n=prompt('备注',v.note||''); if(n!==null){ await p('voice-note',{id:v.id,note:n}); load(); } }
+  else if(act==='2'){ const n=prompt('新名字',v.name); if(n){ const r=await p('voice-rename',{id:v.id,name:n}); if(!r.ok) alert(r.message); load(); } }
+  else if(act==='3'){ const rm=confirm('同时删除磁盘上的权重文件吗？\n确定=删文件，取消=只从列表移除'); const r=await p('voice-delete',{id:v.id,removeFiles:rm}); if(!r.ok) alert(r.message); load(); }
+}
+async function syncAb(){
+  const r=await g('sync-aurabot');
+  if(!r.ok){ alert('同步失败：'+(r.message||'')); return }
+  alert('已同步到 Aurabot\n音色：'+r.voice+'\n参考音：'+r.refAudio+'\n文字：'+r.refText+(r.engineStarted?'\n\n引擎当时离线，已自动启动（约 50 秒后可用）':'')+'\n\n如果 Aurabot 面板还开着，先按 F5 刷新，别直接点保存。');
+}
+async function clean(){
+  const r=await g('clean');
+  alert(r.ok? '已清理 '+r.removed+' 项' : '清理失败：'+(r.message||''));
+  if(r.ok) checkEnv();
+}
+async function diag(){
+  const r=await g('diag');
+  if(!r.ok){alert(r.message||'诊断失败');return}
+  const blob=new Blob([r.content],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=r.name; a.click();
+  alert('诊断包已生成：\n'+r.path);
+}
+async function exportCfg(){
+  const r=await g('export-config');
+  const blob=new Blob([JSON.stringify(r.config,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='voice-studio-config.json'; a.click();
+}
+async function importCfg(e){
+  const f=e.target.files[0]; if(!f) return;
+  const txt=await f.text();
+  try{ const cfg=JSON.parse(txt); const r=await p('import-config',{config:cfg}); alert(r.ok?'导入成功，刷新中':'导入失败：'+r.message); if(r.ok){await load(); checkEnv();} }
+  catch(err){ alert('文件不是合法 JSON'); }
+}
+async function applyPlan(){
+  const pl=window.__plan||{};
+  if(pl.mode==='train'){ show('work'); document.getElementById('name').focus(); return; }
+  if(pl.mode==='use-trained'){
+    const st=await g('state'); const v=(st.voices||[]).find(x=>x.id!=='zero-shot'&&x.status==='ready');
+    if(v){ await p('active',{id:v.id}); load(); } return;
+  }
+  await p('tts-ensure',{});
+  document.getElementById('plandetail').textContent='正在启动引擎，约 40~60 秒后可用…';
+  setTimeout(load, 25000);
+}
+async function checkEnv(){
+  const e=await g('env'); const box=document.getElementById('envlist'); box.innerHTML='';
+  (e.items||[]).forEach(i=>{
+    const d=document.createElement('div'); d.className='env';
+    d.innerHTML='<span class="'+(i.ok?'ok':'bad')+'">'+(i.ok?'✓':'✗')+'</span><div><b>'+i.label+'</b><div class="muted">'+i.detail+'</div>'+(i.ok?'':'<div class="muted">修复：'+i.fix+'</div>')+'</div>';
+    box.appendChild(d);
+  });
+  const bad=(e.items||[]).filter(i=>!i.ok);
+  const bar=document.getElementById('saystatus');
+  const gpu=(e.items||[]).find(i=>i.key==='gpu');
+  const eng=(e.items||[]).find(i=>i.key==='tts');
+  if(bar) bar.textContent=(bad.length?'⚠ ':'● ')+(bad.length? bad.length+' 项待修：'+bad.map(i=>i.label).join('、') : '语音环境就绪')+(eng&&eng.ok?' · 引擎在线':' · 引擎离线')+(gpu? ' · '+gpu.detail:'');
+}
+async function saveSettings(){
+  const body={
+    installRoot:document.getElementById('set-installRoot').value.trim(),
+    ttsUrl:document.getElementById('set-ttsUrl').value.trim(),
+    refAudio:document.getElementById('set-refAudio').value.trim(),
+    refText:document.getElementById('set-refText').value,
+    logRoot:document.getElementById('set-logRoot').value.trim(),
+    nameTemplate:document.getElementById('set-nameTemplate').value.trim(),
+    rvcRoot:document.getElementById('set-rvcRoot').value.trim(),
+    outDir:document.getElementById('set-outDir').value.trim(),
+    autoPauseTts:document.getElementById('set-autoPauseTts').checked,
+    autoStartEngine:document.getElementById('set-autoStartEngine').checked,
+  };
+  const r=await p('settings',body);
+  ['setmsg','setmsg2','setmsg3'].forEach(id=>{const el=document.getElementById(id); if(el) el.textContent=r.ok?'已保存':'保存失败'});
+  if(r.ok){ checkEnv(); loadRvcCheck(); }
+  if(r.ok){ await load(); checkEnv(); }
+}
+function params(){
+  const speed=Number(document.getElementById('speed').value||1);
+  const temperature=Number(document.getElementById('temperature').value||0.6);
+  return {speed,temperature};
+}
+document.getElementById('speed').oninput=(e)=>{document.getElementById('spd').textContent=Number(e.target.value).toFixed(2)};
+document.getElementById('temperature').oninput=(e)=>{document.getElementById('tmp').textContent=Number(e.target.value).toFixed(2)};
+function playB64(b64,mime){const bin=atob(b64);const buf=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);const url=URL.createObjectURL(new Blob([buf],{type:mime||'audio/wav'}));return new Audio(url)}
+async function say(ev){
+  const btn=ev.target; btn.disabled=true; document.getElementById('smsg').textContent='合成中…';
+  try{
+    const r=await p('say',{text:document.getElementById('saytext').value,voice:active,...params()});
+    if(!r.ok) throw new Error(r.message);
+    const a=playB64(r.base64,r.mime); a.play(); document.getElementById('smsg').textContent='播放中';
+    a.onended=()=>document.getElementById('smsg').textContent='';
+  }catch(e){ document.getElementById('smsg').textContent='失败：'+e.message }
+  btn.disabled=false;
+}
+async function sayAB(ev){
+  const btn=ev.target; btn.disabled=true; document.getElementById('smsg').textContent='A/B 合成中…';
+  try{
+    const text=document.getElementById('saytext').value;
+    const r=await p('ab',{text,voice:active,...params()});
+    if(!r.ok) throw new Error(r.message);
+    document.getElementById('smsg').textContent='A：当前音色 → B：零样本';
+    const a=playB64(r.current.base64,r.current.mime);
+    a.onended=()=>{const b=playB64(r.zero.base64,r.zero.mime);b.play();b.onended=()=>{document.getElementById('smsg').textContent=''}};
+    a.play();
+  }catch(e){ document.getElementById('smsg').textContent='失败：'+e.message }
+  btn.disabled=false;
+}
+let rvcJobId=null;
+async function loadRvcVoices(){
+  const r=await g('rvc-voices');
+  const sel=document.getElementById('rvcvoice');
+  if(!sel) return;
+  sel.innerHTML='';
+  (r.items||[]).forEach(v=>{const o=document.createElement('option');o.value=v.id;o.textContent=v.id+(v.index?'（带 index）':'');sel.appendChild(o)});
+  if(!(r.items||[]).length){const o=document.createElement('option');o.value='';o.textContent='（没有 .pth 模型）';sel.appendChild(o)}
+}
+document.getElementById('rvcpitch').oninput=(e)=>{document.getElementById('rvcpitchval').textContent=e.target.value};
+document.getElementById('rvcfile').onchange=async(e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const buf=await f.arrayBuffer();
+  const r=await fetch('/voice-studio/upload?name='+encodeURIComponent(f.name),{method:'POST',body:buf}).then(r=>r.json());
+  if(r.ok){document.getElementById('rvcaudio').value=r.path; alert('已上传：'+r.path)} else alert('上传失败：'+r.message);
+};
+async function rvcStart(){
+  const audio=document.getElementById('rvcaudio').value.trim();
+  const voice=document.getElementById('rvcvoice').value;
+  const pitch=Number(document.getElementById('rvcpitch').value||0);
+  const mode=document.getElementById('rvcmode').value;
+  const vocalVolume=Number(document.getElementById('rvcmixv').value||1);
+  const instVolume=Number(document.getElementById('rvcmixi').value||0.8);
+  const clipSeconds=Number(document.getElementById('rvcclip').value||0);
+  document.getElementById('rvcmsg').textContent=(mode==='cover'?'完整翻唱':'变声')+'开始…';
+  document.getElementById('rvcdl').style.display='none';
+  const r=await p(mode==='cover'?'rvc-cover':'rvc-start',{audio,voice,pitch,vocalVolume,instVolume,clipSeconds});
+  if(!r.ok){document.getElementById('rvcmsg').textContent=r.message||'失败';return}
+  rvcJobId=r.job.id;
+  document.getElementById('rvcprog').style.display='block';
+  document.getElementById('rvcplayer').style.display='none';
+  pollRvc();
+}
+document.getElementById('rvcmodelfile').onchange=async(e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const buf=await f.arrayBuffer();
+  const up=await fetch('/voice-studio/upload?name='+encodeURIComponent(f.name),{method:'POST',body:buf}).then(r=>r.json());
+  if(!up.ok){ alert('上传失败：'+up.message); return }
+  const r=await p('rvc-import',{path:up.path});
+  alert(r.ok? '已导入：'+r.added.join('、') : '导入失败：'+(r.message||''));
+  loadRvcVoices();
+};
+async function rvcCancel(){
+  if(!rvcJobId) return;
+  await p('rvc-stop',{id:rvcJobId});
+  document.getElementById('rvcmsg').textContent='已取消';
+}
+document.getElementById('rvcmixv').oninput=(e)=>{document.getElementById('rvcmixvval').textContent=Number(e.target.value).toFixed(1)};
+document.getElementById('rvcmixi').oninput=(e)=>{document.getElementById('rvcmixival').textContent=Number(e.target.value).toFixed(1)};
+async function pollRvc(){
+  if(!rvcJobId) return;
+  const r=await g('job&id='+rvcJobId); const j=r.job; if(!j) return;
+  document.getElementById('rvclog').textContent=j.tail||'';
+  const pct=(String(j.tail||'').match(/(\d{1,3})%\|?/g)||[]).map(x=>parseInt(x)).pop();
+  document.getElementById('rvcbar').style.width=(j.status==='running'?(pct||20):100)+'%';
+  document.getElementById('rvcmsg').textContent=j.status==='running'?'处理中：'+j.phase:j.phase;
+  if(j.status==='running'){ setTimeout(pollRvc,2000); return }
+  if(j.status==='done' && j.output){
+    const ar=await p('audio',{path:j.output});
+    if(ar.ok){
+      const bin=atob(ar.base64); const buf=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+      const el=document.getElementById('rvcplayer');
+      el.src=URL.createObjectURL(new Blob([buf],{type:ar.mime}));
+      el.style.display='';
+      const dl=document.getElementById('rvcdl');
+      dl.style.display=''; dl.href=el.src; dl.download='cover.mp3';
+      document.getElementById('rvcmsg').textContent='完成，可以试听或下载';
+    }
+  }
+  load();
+}
+async function batch(){
+  const lines=(document.getElementById('batchtext').value||'').split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  if(!lines.length){ document.getElementById('bmsg').textContent='先写几句'; return }
+  document.getElementById('bmsg').textContent='合成中（'+lines.length+' 句）…';
+  const r=await p('batch',{texts:lines,voice:active,...params()});
+  if(!r.ok){ document.getElementById('bmsg').textContent='失败：'+(r.message||''); return }
+  let ok=0;
+  r.items.forEach((it,i)=>{
+    if(!it.ok) return;
+    ok++;
+    const bin=atob(it.base64); const buf=new Uint8Array(bin.length);
+    for(let j=0;j<bin.length;j++) buf[j]=bin.charCodeAt(j);
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([buf],{type:'audio/wav'}));
+    a.download='voice-'+String(i+1).padStart(2,'0')+'.wav';
+    a.click();
+  });
+  document.getElementById('bmsg').textContent='完成 '+ok+'/'+lines.length;
+}
+async function loadRefs(){
+  const box=document.getElementById('reflist'); if(!box) return;
+  const r=await g('refs');
+  if(!r.ok){ box.innerHTML='<span class="muted">读取失败</span>'; return }
+  box.innerHTML='';
+  (r.items||[]).forEach(it=>{
+    const d=document.createElement('div'); d.className='env';
+    d.innerHTML='<span class="muted">['+it.tag+']</span><div style="flex:1"><b>'+it.name+'</b><div class="muted">'+it.path+'</div></div>';
+    const b1=document.createElement('button'); b1.className='mini'; b1.textContent='设为全局参考音';
+    b1.onclick=async()=>{ const s=await g('state'); await p('settings',{refAudio:it.path}); await load(); loadRefs(); };
+    const b2=document.createElement('button'); b2.className='mini'; b2.textContent='转写';
+    b2.onclick=async()=>{ b2.disabled=true; b2.textContent='转写中…'; try{ const t=await p('ref-transcribe',{path:it.path}); document.getElementById('set-refText').value=t.text; b2.textContent='已填到参考文字'; }catch(e){ b2.textContent='失败' } };
+    const b3=document.createElement('button'); b3.className='mini'; b3.textContent='绑到当前音色';
+    b3.onclick=async()=>{ await p('voice-ref',{id:active,refAudio:it.path}); alert('已绑定到 '+active); };
+    const box2=document.createElement('div'); box2.style.display='flex'; box2.style.gap='4px';
+    box2.appendChild(b1); box2.appendChild(b2); box2.appendChild(b3);
+    d.appendChild(box2); box.appendChild(d);
+  });
+  if(!(r.items||[]).length) box.innerHTML='<span class="muted">还没有参考音，上传一个或放进 ref 目录</span>';
+}
+document.getElementById('file').onchange=async(e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  const buf=await f.arrayBuffer();
+  const r=await fetch('/voice-studio/upload?name='+encodeURIComponent(f.name),{method:'POST',body:buf}).then(r=>r.json());
+  if(r.ok){document.getElementById('audio').value=r.path; alert('已上传：'+r.path)} else alert('上传失败：'+r.message);
+};
+async function train(){
+  const r=await p('train',{name:document.getElementById('name').value.trim(),audio:document.getElementById('audio').value.trim(),logDir:document.getElementById('logdir').value.trim(),version:document.getElementById('ver').value});
+  if(!r.ok){document.getElementById('tmsg').textContent=r.message||'失败';return}
+  jobId=r.job.id; document.getElementById('tmsg').textContent='已排队 '+jobId;
+  document.getElementById('prog').style.display='block'; poll();
+}
+async function poll(){
+  if(!jobId) return;
+  const r=await g('job&id='+jobId); const j=r.job; if(!j) return;
+  document.getElementById('log').textContent=j.tail||'';
+  const total=7, done=Math.min(total,(j.steps||[]).length);
+  document.getElementById('pbar').style.width=Math.round(done/total*100)+'%';
+  document.getElementById('pstate').textContent=(j.status==='running'?'训练中':(j.status==='queued'?'排队中':'已结束'))+' · '+j.phase+' · '+j.elapsed+'s';
+  document.getElementById('pstep').textContent=(j.steps||[]).join(' → ');
+  if(j.status==='running'||j.status==='queued') setTimeout(poll,1500); else load();
+}
+function syncTheme(){
+  try{
+    const probe=[window.parent.document.body, window.parent.document.documentElement];
+    const g=(n,fb)=>{
+      for(const el of probe){
+        try{const v=(getComputedStyle(el).getPropertyValue(n)||"").trim(); if(v) return v}catch(e){}
+      }
+      return fb;
+    };
+    const cs=null;
+    const r=document.documentElement.style;
+    const bg=g("--dsw-alias-bg-base","#0f1218");
+    r.setProperty("--vs-bg",bg);
+    r.setProperty("--vs-card",g("--dsw-alias-bg-layer-1","#171c26"));
+    r.setProperty("--vs-card2",g("--dsw-alias-bg-layer-2","#1b2130"));
+    r.setProperty("--vs-line",g("--dsw-alias-border-l1","#242c3a"));
+    r.setProperty("--vs-text",g("--dsw-alias-label-primary","#dbe3ef"));
+    r.setProperty("--vs-muted",g("--dsw-alias-label-secondary","#8895a7"));
+    r.setProperty("--vs-btn",g("--dsw-alias-bg-layer-2","#22314a"));
+    r.setProperty("--vs-btn-line",g("--dsw-alias-border-l2","#2e4463"));
+    r.setProperty("--vs-input",g("--dsw-alias-bg-base","#0f121a"));
+    r.setProperty("--vs-pre",g("--dsw-alias-bg-layer-1","#0b0e13"));
+    r.setProperty("--vs-ok",g("--dsw-alias-state-success-primary","#4ade80"));
+    r.setProperty("--vs-bad",g("--dsw-alias-state-error-primary","#f87171"));
+    r.setProperty("--vs-warn",g("--dsw-alias-state-warn-primary","#fbbf24"));
+  }catch(e){}
+}
+syncTheme();
+setInterval(syncTheme,3000);
+document.addEventListener("visibilitychange",syncTheme);
+
+load();
+</script></body></html>
