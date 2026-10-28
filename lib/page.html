@@ -186,7 +186,9 @@ pre{background:var(--vs-pre);border:1px solid var(--vs-line);border-radius:10px;
   </div>
   <div class="card" style="margin-top:14px">
    <b>维护</b>
-   <div style="margin-top:8px"><button onclick="exportCfg()">导出配置</button> <button onclick="diag()">生成诊断包</button> <button onclick="clean()">清理缓存</button> <button onclick="syncAb()">同步到 Aurabot</button> <button onclick="wizReset()">重新运行向导</button></div>
+   <div style="margin-top:8px"><button onclick="exportCfg()">导出配置</button> <button onclick="diag()">生成诊断包</button> <button onclick="clean()">清理缓存</button> <button onclick="wizReset()">重新运行向导</button></div>
+   <div style="margin-top:14px"><b>Aurabot</b><div class="muted" id="abinfo">读取中…</div>
+    <div style="margin-top:8px"><button onclick="syncAb()">同步到 Aurabot</button> <button onclick="importAb()">从 Aurabot 导入</button></div></div>
   </div>
   <div style="margin-top:14px"><button onclick="saveSettings()">保存设置</button><span class="muted" id="setmsg3"></span></div>
  </div>
@@ -262,7 +264,7 @@ function show(v){
   document.getElementById('view-settings').style.display = isSet ? '' : 'none';
   document.getElementById('wsec-say').style.display = v==='cover' ? 'none' : '';
   document.getElementById('wsec-cover').style.display = v==='cover' ? '' : 'none';
-  if (isSet) checkEnv();
+  if (isSet) { checkEnv(); loadAbInfo(); }
   else if (v==='cover') loadRvcVoices();
 }
 let wizStep=1, wizShown=false;
@@ -416,7 +418,26 @@ async function menuVoice(v){
 async function syncAb(){
   const r=await g('sync-aurabot');
   if(!r.ok){ alert('同步失败：'+(r.message||'')); return }
-  alert('已同步到 Aurabot\n音色：'+r.voice+'\n参考音：'+r.refAudio+'\n文字：'+r.refText+(r.engineStarted?'\n\n引擎当时离线，已自动启动（约 50 秒后可用）':'')+'\n\n如果 Aurabot 面板还开着，先按 F5 刷新，别直接点保存。');
+  alert('已同步到 Aurabot\n音色：'+r.voice+'\n参考音：'+r.refAudio+'\n文字：'+r.refText
+    +(r.engineStarted?'\n\n引擎当时离线，已自动启动（约 50 秒后可用）':'')
+    +'\n\n试合成：'+(r.verified?'成功 ✅':'失败 '+(r.verifyMsg||''))
+    +'\n\n如果 Aurabot 面板还开着，先按 F5 刷新，别直接点保存。');
+  loadAbInfo();
+}
+async function loadAbInfo(){
+  const el=document.getElementById('abinfo'); if(!el) return;
+  const r=await g('aurabot-info');
+  if(!r.ok){ el.textContent=r.message||'读不到 Aurabot 配置'; return }
+  el.innerHTML='引擎 '+r.engine+(r.enabled?' · 已启用':' · 已关闭')
+    +'<br>参考音：'+r.refAudio
+    +'<br>文字：'+r.promptText
+    +'<br>地址：'+r.url;
+}
+async function importAb(){
+  const r=await p('import-aurabot',{});
+  if(!r.ok){ alert('导入失败：'+(r.message||'')); return }
+  alert('已从 Aurabot 导入\n参考音：'+r.refAudio+'\n文字：'+r.refText);
+  load(); checkEnv(); loadAbInfo();
 }
 async function clean(){
   const r=await g('clean');
