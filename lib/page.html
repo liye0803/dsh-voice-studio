@@ -188,7 +188,9 @@ pre{background:var(--vs-pre);border:1px solid var(--vs-line);border-radius:10px;
    <b>维护</b>
    <div style="margin-top:8px"><button onclick="exportCfg()">导出配置</button> <button onclick="diag()">生成诊断包</button> <button onclick="clean()">清理缓存</button> <button onclick="wizReset()">重新运行向导</button></div>
    <div style="margin-top:14px"><b>Aurabot</b><div class="muted" id="abinfo">读取中…</div>
-    <div style="margin-top:8px"><button onclick="syncAb()">同步到 Aurabot</button> <button onclick="importAb()">从 Aurabot 导入</button></div></div>
+    <div style="margin-top:8px"><button id="ab-sync" onclick="syncAb()">同步到 Aurabot</button> <button id="ab-imp" onclick="importAb()">从 Aurabot 导入</button></div>
+    <label style="margin-top:10px">Aurabot 配置路径（留空自动找）</label>
+    <div style="display:flex;gap:8px"><input id="set-aurabotConfig" placeholder="留空 = ~/.dsh/plugins-data/aurabot/config.json"><button onclick="pickAbConfig()">选择…</button></div></div>
   </div>
   <div style="margin-top:14px"><button onclick="saveSettings()">保存设置</button><span class="muted" id="setmsg3"></span></div>
  </div>
@@ -396,6 +398,7 @@ async function load(){
   if(!pl.canTrain){ const vv=document.getElementById('ver'); if(vv&&vv.value==='v2ProPlus') vv.value='v2'; }
   document.getElementById('set-rvcRoot').value=s.settings.rvcRoot||'';
   document.getElementById('set-outDir').value=s.settings.outDir||'';
+  document.getElementById('set-aurabotConfig').value=s.settings.aurabotConfig||'';
   document.getElementById('set-installRoot').value=s.settings.installRoot||'';
   document.getElementById('set-ttsUrl').value=s.settings.ttsUrl||'';
   document.getElementById('set-refAudio').value=s.settings.refAudio||'';
@@ -427,11 +430,24 @@ async function syncAb(){
 async function loadAbInfo(){
   const el=document.getElementById('abinfo'); if(!el) return;
   const r=await g('aurabot-info');
-  if(!r.ok){ el.textContent=r.message||'读不到 Aurabot 配置'; return }
+  const syncBtn=document.getElementById('ab-sync'), impBtn=document.getElementById('ab-imp');
+  if(!r.ok){
+    el.textContent=r.message||'读不到 Aurabot 配置';
+    if(syncBtn) syncBtn.disabled=true;
+    if(impBtn) impBtn.disabled=true;
+    return;
+  }
+  if(syncBtn) syncBtn.disabled=false;
+  if(impBtn) impBtn.disabled=false;
   el.innerHTML='引擎 '+r.engine+(r.enabled?' · 已启用':' · 已关闭')
     +'<br>参考音：'+r.refAudio
     +'<br>文字：'+r.promptText
     +'<br>地址：'+r.url;
+}
+async function pickAbConfig(){
+  const r=await p('pick-file',{});
+  if(r.ok && r.path){ document.getElementById('set-aurabotConfig').value=r.path; await saveSettings(); loadAbInfo(); }
+  else if(r.message) alert('没选到文件：'+r.message);
 }
 async function importAb(){
   const r=await p('import-aurabot',{});
@@ -496,6 +512,7 @@ async function saveSettings(){
     nameTemplate:document.getElementById('set-nameTemplate').value.trim(),
     rvcRoot:document.getElementById('set-rvcRoot').value.trim(),
     outDir:document.getElementById('set-outDir').value.trim(),
+    aurabotConfig:document.getElementById('set-aurabotConfig').value.trim(),
     autoPauseTts:document.getElementById('set-autoPauseTts').checked,
     autoStartEngine:document.getElementById('set-autoStartEngine').checked,
   };
