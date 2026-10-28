@@ -1,0 +1,14 @@
+{
+  "installRoot": "D:\\\\AI_Tools\\\\dania-voice",
+  "ttsUrl": "http://127.0.0.1:9880",
+  "refAudio": "D:\\\\AI_Tools\\\\dania-voice\\\\ref\\\\sample-ref.wav",
+  "refText": "这里填参考音里逐字对应的文字",
+  "logRoot": "",
+  "nameTemplate": "{name}-e{epoch}",
+  "rvcRoot": "E:\\\\Aurabot\\\\rvc",
+  "outDir": "E:\\\\covers",
+  "aurabotConfig": "",
+  "autoPauseTts": true,
+  "autoStartEngine": true,
+  "setupDone": true
+}

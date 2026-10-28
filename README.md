@@ -8,6 +8,31 @@
 
 ---
 
+## English quickstart
+
+**dsh-voice-studio** is a Windows-only plugin for DeepSeek Harness that puts a voice workbench in the
+sidebar: manage GPT-SoVITS voices (zero-shot preview, fine-tuning, switching, A/B), and run RVC covers
+(separate vocals → voice conversion → mix → mp3).
+
+The plugin ships **no models or engines**. You need:
+
+- DeepSeek Harness (plugin host)
+- GPT-SoVITS with `api_v2.py` running on `127.0.0.1:9880`
+- optionally an RVC environment (Applio + audio-separator + ffmpeg) for covers
+
+Install (after publishing):
+
+```bash
+dsh plugin --profile desktop add dsh-voice-studio
+# or from git
+dsh plugin --profile desktop add github:liye0803/dsh-voice-studio
+```
+
+Restart DSH, open the sidebar entry, and the 3-step wizard will ask where your engines live.
+HTTP API: `GET /voice-studio/say?text=hello&voice=zero-shot` returns a wav.
+
+---
+
 ## 它能做什么
 
 ### 说话（GPT-SoVITS）
@@ -159,6 +184,16 @@ node lib/index.js --standalone 9909
 页面脚本出错时整页 JS 会失效；按 F5，或看开发者工具 Console 的第一条报错。
 
 ---
+
+---
+
+## 合规与免责
+
+- 本插件只做**本地编排**，不下载、不分发任何模型、音色或音频内容
+- GPT-SoVITS、RVC/Applio、audio-separator、ffmpeg 各自遵循其开源许可，请自行遵守
+- **音色克隆须获得权利人授权**：使用他人声音训练或发布内容可能侵犯人格权/著作权，风险由使用者承担
+- 抓取音乐平台歌曲（如网易云、QQ 音乐）可能违反其服务条款，本插件不提供任何平台接入
+- 项目按 MIT 提供，不对因使用产生的任何后果负责
 
 ## 许可
 

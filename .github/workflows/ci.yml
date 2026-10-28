@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 语法检查（宿主与客户端）
+        run: |
+          node --check lib/index.js
+          node --check lib/app.js
+          node --check lib/client.js
+      - name: 页面脚本提取后语法检查
+        shell: pwsh
+        run: |
+          $html = Get-Content lib/page.html -Raw
+          $m = [regex]::Match($html, '(?s)<script>(.*?)</script>')
+          if (-not $m.Success) { throw 'page.html 里没有找到 <script> 块' }
+          Set-Content -Path page.check.js -Value $m.Groups[1].Value -Encoding UTF8
+          node --check page.check.js
+      - name: JSON 校验
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'));console.log('package.json ok')"
+      - name: 基础冒烟（独立模式起服务并请求 version）
+        shell: pwsh
+        run: |
+          $env:DSH_HOME = Join-Path $env:RUNNER_TEMP 'dsh-ci'
+          New-Item -ItemType Directory -Force -Path $env:DSH_HOME | Out-Null
+          $p = Start-Process node -ArgumentList 'lib/index.js','--standalone','9919' -PassThru -WindowStyle Hidden
+          try {
+            Start-Sleep -Seconds 4
+            $r = Invoke-WebRequest 'http://127.0.0.1:9919/voice-studio/api?action=version' -UseBasicParsing
+            if ($r.StatusCode -ne 200) { throw "version 返回 $($r.StatusCode)" }
+            if ($r.Content -notmatch '"ok":true') { throw "version 内容异常：$($r.Content)" }
+            Write-Host "smoke ok: $($r.Content)"
+          } finally {
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          }
