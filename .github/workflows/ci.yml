@@ -21,7 +21,7 @@ jobs:
       - name: 页面脚本提取后语法检查
         shell: pwsh
         run: |
-          $html = Get-Content lib/page.html -Raw
+          $html = Get-Content lib/page.html -Raw -Encoding UTF8
           $m = [regex]::Match($html, '(?s)<script>(.*?)</script>')
           if (-not $m.Success) { throw 'page.html 里没有找到 <script> 块' }
           Set-Content -Path page.check.js -Value $m.Groups[1].Value -Encoding UTF8
