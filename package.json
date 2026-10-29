@@ -29,6 +29,10 @@
     "docs",
     "LICENSE"
   ],
+  "scripts": {
+    "test": "node scripts/test-api.mjs",
+    "check": "node --check lib/app.js && node --check lib/index.js && node --check lib/client.js"
+  },
   "engines": { "node": ">=22" },
   "os": ["win32"],
   "dsh": {

@@ -29,18 +29,5 @@ jobs:
       - name: JSON 校验
         run: |
           node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'));console.log('package.json ok')"
-      - name: 基础冒烟（独立模式起服务并请求 version）
-        shell: pwsh
-        run: |
-          $env:DSH_HOME = Join-Path $env:RUNNER_TEMP 'dsh-ci'
-          New-Item -ItemType Directory -Force -Path $env:DSH_HOME | Out-Null
-          $p = Start-Process node -ArgumentList 'lib/index.js','--standalone','9919' -PassThru -WindowStyle Hidden
-          try {
-            Start-Sleep -Seconds 4
-            $r = Invoke-WebRequest 'http://127.0.0.1:9919/voice-studio/api?action=version' -UseBasicParsing
-            if ($r.StatusCode -ne 200) { throw "version 返回 $($r.StatusCode)" }
-            if ($r.Content -notmatch '"ok":true') { throw "version 内容异常：$($r.Content)" }
-            Write-Host "smoke ok: $($r.Content)"
-          } finally {
-            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-          }
+      - name: 接口冒烟测试（初装态）
+        run: node scripts/test-api.mjs

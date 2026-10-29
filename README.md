@@ -154,6 +154,13 @@ tools/
 | `lib/app.js` / `index.js` / `client.js` | 重启 DSH |
 | `tools/*.py` | 下次任务生效 |
 
+自测（初装态逐项打接口，CI 也跑这个）：
+
+```bash
+npm test        # 或 node scripts/test-api.mjs
+npm run check   # 三个 JS 文件语法检查
+```
+
 独立调试（不开 DSH 也能看界面）：
 
 ```bash
