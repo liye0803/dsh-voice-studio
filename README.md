@@ -35,11 +35,17 @@ HTTP API: `GET /voice-studio/say?text=hello&voice=zero-shot` returns a wav.
 
 ## 截图
 
-> 截图放在 `docs/screenshots/`，文件名对应如下。
+**说话**：音色列表、试听、语速/温度、A/B、批量合成、新建训练
 
-| 说话 | 翻唱 | 设置 |
-|---|---|---|
-| ![说话](docs/screenshots/say.png) | ![翻唱](docs/screenshots/cover.png) | ![设置](docs/screenshots/settings.png) |
+![说话页](docs/screenshots/say.png)
+
+**翻唱**：选音频、RVC 音色、变调、模式、人声/伴奏音量、只处理前 N 秒
+
+![翻唱页](docs/screenshots/cover.png)
+
+**设置 · 系统**：一键导入、安装位置、输出位置、维护与 Aurabot 同步
+
+![设置页](docs/screenshots/settings.png)
 
 ---
 
