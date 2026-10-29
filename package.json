@@ -1,6 +1,6 @@
 {
   "name": "dsh-voice-studio",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Voice Studio for DeepSeek Harness: a sidebar panel that manages GPT-SoVITS voices (training, switching, speaking) and RVC covers (voice conversion, separation, mixing) on Windows.",
   "keywords": [
     "dsh",
@@ -15,8 +15,12 @@
   "type": "module",
   "main": "lib/index.js",
   "exports": {
-    ".": { "default": "./lib/index.js" },
-    "./client": { "default": "./lib/client.js" },
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
     "./package.json": "./package.json",
     "./cordis.patch.yml": "./cordis.patch.yml"
   },
@@ -33,11 +37,22 @@
     "test": "node scripts/test-api.mjs",
     "check": "node --check lib/app.js && node --check lib/index.js && node --check lib/client.js"
   },
-  "engines": { "node": ">=22" },
-  "os": ["win32"],
+  "engines": {
+    "node": ">=22"
+  },
+  "os": [
+    "win32"
+  ],
   "dsh": {
-    "bundle": { "patch": "./cordis.patch.yml" },
-    "client": { "platform": "web", "inject": ["slots"] }
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "slots"
+      ]
+    }
   },
   "repository": {
     "type": "git",
