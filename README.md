@@ -33,6 +33,16 @@ HTTP API: `GET /voice-studio/say?text=hello&voice=zero-shot` returns a wav.
 
 ---
 
+## 截图
+
+> 截图放在 `docs/screenshots/`，文件名对应如下。
+
+| 说话 | 翻唱 | 设置 |
+|---|---|---|
+| ![说话](docs/screenshots/say.png) | ![翻唱](docs/screenshots/cover.png) | ![设置](docs/screenshots/settings.png) |
+
+---
+
 ## 它能做什么
 
 ### 说话（GPT-SoVITS）
@@ -189,8 +199,6 @@ node lib/index.js --standalone 9909
 
 **面板点了没反应**
 页面脚本出错时整页 JS 会失效；按 F5，或看开发者工具 Console 的第一条报错。
-
----
 
 ---
 
