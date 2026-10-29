@@ -216,6 +216,12 @@ node lib/index.js --standalone 9909
 - 抓取音乐平台歌曲（如网易云、QQ 音乐）可能违反其服务条款，本插件不提供任何平台接入
 - 项目按 MIT 提供，不对因使用产生的任何后果负责
 
+## 相关文档
+
+- [docs/PUBLISHING.md](docs/PUBLISHING.md)：开源插件发布流程（阶段清单 + 踩坑速查）
+- [AGENTS.md](AGENTS.md)：接手速查（路径、改哪生效、命令）
+- [CHANGELOG.md](CHANGELOG.md)：版本记录
+
 ## 许可
 
 MIT，见 [LICENSE](./LICENSE)。
