@@ -15,7 +15,7 @@ DeepSeek Harness 插件（Windows 专用）：侧边栏管理 GPT-SoVITS 音色�
 
 | 用途 | 路径 | 谁管 |
 |---|---|---|
-| 插件代码 | `D:\AI_Tools\dsh-voice-studio` | git 仓库，改动在这 |
+| 插件代码 | `E:\deepseek\鲸鱼娘文件保存\plugins\实用插件\dsh-voice-studio` | git 仓库，改动在这 |
 | 说话引擎 | `D:\AI_Tools\dania-voice` | GPT-SoVITS + venv + asr-venv + 底模 + `ref\` 参考音 |
 | 翻唱引擎 | `E:\Aurabot\rvc` | python env + Applio + audio-separator + ffmpeg + `models\` |
 | 运行数据 | `C:\Users\xu050\.dsh\voice-studio` | settings/voices/jobs/logs/samples/uploads/dataset |
@@ -36,7 +36,7 @@ DeepSeek Harness 插件（Windows 专用）：侧边栏管理 GPT-SoVITS 音色�
 ⚠️ 改 `page.html` 后必须先做语法检查，否则整页 JS 失效（历史上踩过两次）：
 
 ```powershell
-cd D:\AI_Tools\dsh-voice-studio
+cd E:\deepseek\鲸鱼娘文件保存\plugins\实用插件\dsh-voice-studio
 $html=Get-Content lib/page.html -Raw -Encoding UTF8
 $m=[regex]::Match($html,'(?s)<script>(.*?)</script>')
 Set-Content page.check.js -Value $m.Groups[1].Value -Encoding UTF8
@@ -49,7 +49,7 @@ node --check page.check.js; Remove-Item page.check.js
 
 ```powershell
 # 语法检查 + 接口冒烟（19 项，初装态）
-cd D:\AI_Tools\dsh-voice-studio
+cd E:\deepseek\鲸鱼娘文件保存\plugins\实用插件\dsh-voice-studio
 npm test
 npm run check
 
