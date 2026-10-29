@@ -1,0 +1,50 @@
+name: release
+
+# 推 tag 就自动建 Release：git tag v1.0.2 && git push origin v1.0.2
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 从 CHANGELOG 提取本版本说明
+        run: |
+          node -e '
+            const fs = require("fs");
+            const tag = process.env.GITHUB_REF_NAME.replace(/^v/, "");
+            const lines = fs.readFileSync("CHANGELOG.md", "utf8").split("\n");
+            const out = [];
+            let on = false;
+            for (const l of lines) {
+              if (l.startsWith("## ")) {
+                if (on) break;
+                if (l.includes(tag)) { on = true; continue; }
+              }
+              if (on) out.push(l);
+            }
+            const body = out.join("\n").trim();
+            fs.writeFileSync("notes.md", body ? body + "\n" : "详见 CHANGELOG.md\n");
+            console.log(body || "(CHANGELOG 没找到该版本，使用默认说明)");
+          '
+
+      - name: 创建 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: notes.md
+          draft: false
+          prerelease: false

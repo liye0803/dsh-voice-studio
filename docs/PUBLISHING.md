@@ -173,6 +173,28 @@ git push -u origin main
 
 ---
 
+## 最快路径：推 tag 即发布
+
+本仓库配置了两个工作流：
+
+| 工作流 | 触发 | 做什么 |
+|---|---|---|
+| `ci.yml` | push / PR | 语法检查 + 19 项接口冒烟 |
+| `release.yml` | push tag `v*` | 从 CHANGELOG 抽本节说明，自动建 GitHub Release |
+
+所以发版退化成两条命令：
+
+```powershell
+node scripts/release.mjs 1.0.2 "修了什么"   # 改版本 + CHANGELOG + commit + tag + push
+# 完了。1~2 分钟后 Release 自动出现，无需点网页
+```
+
+想再快：直接用 `gh` CLI（需要本机装 gh 并登录）
+
+```powershell
+gh release create v1.0.2 --notes-file notes.md
+```
+
 ## 最小可行路径（只求“能发出去”，约 1 小时）
 
 1. `package.json` 填齐 + `LICENSE`
