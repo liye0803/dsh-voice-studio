@@ -1,6 +1,6 @@
 {
   "name": "dsh-voice-studio",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Voice Studio for DeepSeek Harness: a sidebar panel that manages GPT-SoVITS voices (training, switching, speaking) and RVC covers (voice conversion, separation, mixing) on Windows.",
   "keywords": [
     "dsh",

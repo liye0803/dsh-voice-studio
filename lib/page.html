@@ -424,6 +424,7 @@ async function syncAb(){
   alert('已同步到 Aurabot\n音色：'+r.voice+'\n参考音：'+r.refAudio+'\n文字：'+r.refText
     +(r.engineStarted?'\n\n引擎当时离线，已自动启动（约 50 秒后可用）':'')
     +'\n\n试合成：'+(r.verified?'成功 ✅':'失败 '+(r.verifyMsg||''))
+    +(r.warning?'\n\n⚠ '+r.warning:'')
     +'\n\n如果 Aurabot 面板还开着，先按 F5 刷新，别直接点保存。');
   loadAbInfo();
 }
